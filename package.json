@@ -1,0 +1,20 @@
+{
+  "name": "fastify-websocket-mongoose",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "nodemon src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "array-flatten": "^2.1.2",
+    "fastify": "^1.13.3",
+    "flat": "^4.1.0",
+    "matching": "file:../matching",
+    "mongoose": "^5.4.1",
+    "mongoose-type-email": "^1.0.10"
+  }
+}
