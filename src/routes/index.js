@@ -1,3 +1,5 @@
+const  unflatten = require('flat').unflatten;
+
 module.exports = (routesArr, pathControllers, file) => {
   const classesSet = new Set(routesArr.map(route => route[2]));
   const objects = {};
@@ -13,10 +15,10 @@ module.exports = (routesArr, pathControllers, file) => {
         query,
         body
       } = request;
-      let data = Object.assign({}, params, query, body);
+      let data = unflatten(Object.assign({}, params, query, body));
       const classMethod = route[3];
       let responseData = await objects[route[2]][classMethod](data);
-      reply.code(responseData.statusCode);
+      reply.code(responseData.status);
       return responseData;
     }
   }, route[4]));

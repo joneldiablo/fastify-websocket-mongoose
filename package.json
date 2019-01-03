@@ -15,6 +15,7 @@
     "flat": "^4.1.0",
     "matching": "file:../matching",
     "mongoose": "^5.4.1",
+    "mongoose-paginate": "^5.0.3",
     "mongoose-type-email": "^1.0.10"
   }
 }

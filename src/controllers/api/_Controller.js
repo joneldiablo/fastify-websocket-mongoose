@@ -5,18 +5,52 @@ class Controller {
   }
 
   async get(reqData) {
+    let {
+      offset,
+      limit,
+      page
+    } = reqData.pagination;
+    if (typeof limit === 'string') {
+      reqData.pagination.limit = parseInt(limit);
+    }
+    if (typeof offset === 'string') {
+      reqData.pagination.offset = parseInt(offset);
+    }
+    if (typeof page === 'string') {
+      reqData.pagination.page = parseInt(page);
+    }
+    // convert query to regex as LIKE
+    if (typeof reqData.q === 'string') {
+      // search at any column in searchFields
+      reqData.q = this.buildSearch(reqData.q);
+    } else {
+      // search at any column requested
+      Object.keys(reqData.q || {}).forEach(i => {
+        if (typeof reqData.q[i] === 'string') {
+          const re = new RegExp(`^(.*)?${reqData.q[i]}(.*)?$`, 'i');
+          reqData.q[i] = re;
+        }
+      });
+    }
+    // https://www.npmjs.com/package/mongoose-paginate reqData.pagination
     try {
-      let data = await this.Model.find(reqData.search);
-      return this.done(data);
+      let data = await this.Model.paginate(reqData.q, reqData.pagination);
+      return this.success(data);
     } catch (e) {
       return this.error(e);
     }
   }
 
+  async getActive(reqData) {
+    reqData.q = this.buildSearch(reqData.q);
+    reqData.q.active = true;
+    return await this.get(reqData);
+  }
+
   async getById(reqData) {
     try {
       let data = await this.Model.findById(reqData.id);
-      return this.done(data);
+      return this.success(data);
     } catch (e) {
       return this.error(e);
     }
@@ -24,36 +58,51 @@ class Controller {
 
   async getByColumn(reqData) {
     try {
-      let data = await this.Model.findOne(reqData.search);
-      return this.done(data);
+      let data = await this.Model.findOne(reqData.q);
+      return this.success(data);
     } catch (e) {
       return this.error(e);
     }
   }
 
   async set(reqData) {
-    let obj = new this.Model(reqData.row);
+    let obj = new this.Model(reqData.payload);
     try {
       let data = await obj.save();
-      return this.done(data);
+      return this.success(data);
     } catch (e) {
       return this.error(e);
     }
   }
 
-  async update(reqData) {
+  async updateById(reqData) {
     try {
-      let data = await this.Model.findByIdAndUpdate(reqData.id, reqData.row);
-      return this.done(data);
+      let data = await this.Model.findByIdAndUpdate(reqData.id, reqData.payload);
+      return this.success(data);
     } catch (e) {
       return this.error(e);
     }
+  }
+
+  async updateByColumn(reqData) {
+    try {
+      let data = await this.Model.findAndUpdate(reqData.q, reqData.payload);
+      return this.success(data);
+    } catch (e) {
+      return this.error(e);
+    }
+  }
+
+  async updateActive(reqData) {
+    reqData.q.active = true;
+    reqData.q._id = reqData.id;
+    return await this.updateByColumn(reqData);
   }
 
   async delete(reqData) {
     try {
       let data = await this.Model.findByIdAndDelete(reqData.id);
-      return this.done(data);
+      return this.success(data);
     } catch (e) {
       return this.error(e);
     }
@@ -62,7 +111,7 @@ class Controller {
   async setActive(reqData) {
     return await this.update({
       id: reqData.id,
-      row: {
+      payload: {
         active: !!reqData.active
       }
     });
@@ -71,7 +120,7 @@ class Controller {
   async disable(reqData) {
     return await this.update({
       id: reqData.id,
-      row: {
+      payload: {
         active: false
       }
     });
@@ -80,17 +129,18 @@ class Controller {
   async enable(reqData) {
     return await this.update({
       id: reqData.id,
-      row: {
+      payload: {
         active: true
       }
     });
   }
 
-  done(data, statusCode = 200) {
+  success(data, statusCode = 200) {
     return {
-      done: true,
-      statusCode: statusCode,
-      data: data
+      success: true,
+      error: false,
+      status: statusCode,
+      payload: data
     }
   }
 
@@ -105,10 +155,24 @@ class Controller {
       }
     }
     return {
-      error: true,
-      statusCode: statusCode,
-      description: e
+      success: false,
+      error: e,
+      status: statusCode,
+      payload: null
     }
+  }
+
+  buildSearch(search) {
+    let toReturn = {
+      $or: []
+    };
+    const re = new RegExp(`^(.*)?${search}(.*)?$`, 'i');
+    this.Model.searchFields.forEach(i => {
+      toReturn.$or.push({
+        [i]: re
+      });
+    });
+    return toReturn;
   }
 
 }

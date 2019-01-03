@@ -22,4 +22,6 @@ const userSchema = new mongoose.Schema({
   sessions: [sessionSchema]
 });
 
+userSchema.statics.searchFields = ['name', 'email', 'phoneNumber'];
+
 module.exports = userSchema;
