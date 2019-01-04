@@ -12,6 +12,8 @@
   "dependencies": {
     "array-flatten": "^2.1.2",
     "fastify": "^1.13.3",
+    "fastify-websocket": "^0.3.0",
+    "fastify-ws": "^1.0.0",
     "flat": "^4.1.0",
     "matching": "file:../matching",
     "mongoose": "^5.4.1",

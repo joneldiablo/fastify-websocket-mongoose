@@ -24,10 +24,7 @@ module.exports = (routesArr, pathControllers, file) => {
   }, route[4]));
   return (fastify, opts, next) => {
     if (opts.preHandler) {
-      fastify.addHook('preHandler', (req, res, next) => {
-        opts.preHandler(req, res, next);
-        next();
-      });
+      fastify.addHook('preHandler', opts.preHandler);
     }
     routes.forEach(route => {
       fastify.route(route);
