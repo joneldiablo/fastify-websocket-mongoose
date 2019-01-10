@@ -9,7 +9,7 @@ class Controller {
       offset,
       limit,
       page
-    } = reqData.pagination;
+    } = reqData.pagination || {};
     if (typeof limit === 'string') {
       reqData.pagination.limit = parseInt(limit);
     }

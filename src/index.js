@@ -5,61 +5,68 @@ const fastify = require('fastify')({
   logger: true
 });
 
+fastify.register(require('fastify-routes'))
+fastify.register(require('fastify-ws'));
+
 // routes mapper
-const routes = require('./routes');
+const {
+  routesRegister,
+  wsRegister
+} = require('./routes');
 // routes
 const adminRoutes = require('./routes/admin');
 const privateRoutes = require('./routes/private');
 const publicRoutes = require('./routes/public');
-
+const pathControllers = '../controllers/api/';
+const finalRoutes = [{
+    // Admin level
+    routes: adminRoutes,
+    path: pathControllers,
+    opts: {
+      prefix: '/admin',
+      preHandler: (reqData) => {
+        console.log('security preHandler');
+      }
+    }
+  },
+  // User level
+  {
+    routes: privateRoutes,
+    path: pathControllers,
+    opts: {
+      prefix: '/private',
+      preHandler: (reqData) => {
+        console.log('security preHandler');
+      }
+    }
+  },
+  // Public
+  {
+    routes: publicRoutes,
+    path: pathControllers
+  }
+];
 // routes register
 fastify.register((instance, opts, next) => {
-
-  // Admin level
-  instance.register(routes(adminRoutes, '../controllers/api/'), {
-    prefix: '/admin',
-    preHandler: (req, res, next) => {
-      console.log('security preHandler');
-      next();
-    }
-  });
-
-  // Users level
-  instance.register(routes(privateRoutes, '../controllers/api/'), {
-    prefix: '/private',
-    preHandler: (req, res, next) => {
-      console.log('security preHandler');
-      next();
-    }
-  });
-
-  // Public
-  instance.register(routes(publicRoutes, '../controllers/api/'));
+  routesRegister(instance, finalRoutes);
+  wsRegister(instance, finalRoutes);
 
   next();
 }, {
   prefix: '/api/v1'
 });
 
-fastify.register(require('fastify-ws'));
-
-fastify.ready(err => {
-  if (err) throw err
-
-  console.log('Server started.')
-
-  fastify.ws
-    .on('connection', socket => {
-      console.log('Client connected.');
-
-      socket.on('message', msg => socket.send(`[${msg}]`)); // Creates an echo server
-
-      socket.on('close', () => console.log('Client disconnected.'));
-    });
-});
+/* fastify.addHook('onRoute', (routeOptions) => {
+  const type = `${routeOptions.method} ${routeOptions.url}`;
+});*/
 
 // server
 fastify.listen(3000, (err, address) => {
   if (err) throw err;
-  fastify.log.info(`server listening on ${address}`);
+  console.log(`server listening on ${address}`);
+});
+
+fastify.ready(err => {
+  if (err) throw err
+  console.log('Server started.');
 });
